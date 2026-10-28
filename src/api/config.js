@@ -1,4 +1,4 @@
-import { MODELS, TEMPERATURES, LIMITS, json, supabaseConfigured } from "../_lib/shared.js";
+import { MODELS, TEMPERATURES, LIMITS, json, supabaseConfigured } from "../lib/shared.js";
 
 export function onRequestGet({ env }) {
   return json({

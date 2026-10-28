@@ -1,4 +1,4 @@
-import { TEMPERATURES, MODELS, LIMITS, json, supabase, supabaseConfigured } from "../_lib/shared.js";
+import { TEMPERATURES, MODELS, LIMITS, json, supabase, supabaseConfigured } from "../lib/shared.js";
 
 const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 

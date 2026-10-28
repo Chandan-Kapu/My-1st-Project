@@ -3,7 +3,7 @@
 One prompt runs three times, at temperature **0**, **0.7** and **1.5**, with the outputs side by side. You pick the model size (3B → 405B). Every run is logged to Supabase so you can compare later.
 
 - **Frontend:** static HTML/CSS/JS in `public/`
-- **Backend:** Cloudflare Pages Functions in `functions/api/`
+- **Backend:** a Cloudflare Worker (`src/index.js`) that serves `public/` as static assets and routes `/api/*` to `src/api/`
   - `GET /api/config`: models, temperatures, and whether keys are set
   - `POST /api/run`: `{ prompt, model, maxTokens }` → runs 3 temperatures in parallel via NVIDIA NIM, then logs the run
   - `GET /api/runs`: the 20 most recent runs
@@ -17,7 +17,7 @@ Without an `NVIDIA_API_KEY` the site runs in **mock mode**, so you can try the U
 ```bash
 npm install
 cp .dev.vars.example .dev.vars   # fill in keys, or leave blank for mock mode
-npm run dev                      # http://localhost:8788
+npm run dev                      # http://localhost:8787
 ```
 
 ## Set up Supabase
@@ -26,17 +26,23 @@ npm run dev                      # http://localhost:8788
 2. Run `supabase/schema.sql` in the SQL editor.
 3. Copy the project URL and the **service_role** key (Settings → API) into your secrets.
 
-## Deploy to Cloudflare Pages
+## Deploy to Cloudflare Workers
+
+**From GitHub (recommended):** Workers & Pages → Create → Import a repository → `My-1st-Project`.
+- Project name: `my-1st-project` (must match `name` in `wrangler.toml`)
+- Build command: leave empty
+- Deploy command: `npx wrangler deploy`
+
+Then add `NVIDIA_API_KEY`, `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` under the Worker's Settings → Variables and Secrets (as type **Secret**) and redeploy.
+
+**From your computer:**
 
 ```bash
-npx wrangler pages project create temperature-playground
-npx wrangler pages secret put NVIDIA_API_KEY
-npx wrangler pages secret put SUPABASE_URL
-npx wrangler pages secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret put NVIDIA_API_KEY
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 npm run deploy
 ```
-
-Or connect this GitHub repo in the Cloudflare dashboard (build command: none, output directory: `public`) and add the three secrets under Settings → Environment variables.
 
 ## Production readiness
 

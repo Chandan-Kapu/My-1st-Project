@@ -1,4 +1,4 @@
-import { json, supabase, supabaseConfigured } from "../_lib/shared.js";
+import { json, supabase, supabaseConfigured } from "../lib/shared.js";
 
 export async function onRequestGet({ env }) {
   if (!supabaseConfigured(env)) return json({ configured: false, runs: [] });

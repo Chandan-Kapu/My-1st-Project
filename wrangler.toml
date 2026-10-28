@@ -1,9 +1,18 @@
-name = "temperature-playground"
+# Must match the project name in the Cloudflare dashboard.
+name = "my-1st-project"
+main = "src/index.js"
 compatibility_date = "2026-10-01"
-pages_build_output_dir = "public"
 
-# Secrets are NOT stored here. Set them with:
-#   npx wrangler pages secret put NVIDIA_API_KEY
-#   npx wrangler pages secret put SUPABASE_URL
-#   npx wrangler pages secret put SUPABASE_SERVICE_ROLE_KEY
+# Serves public/ (index.html, app.js, styles.css). Requests that don't match a file go to the Worker.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+# Secrets are NOT stored here. Add them in the dashboard (Settings → Variables and Secrets) or with:
+#   npx wrangler secret put NVIDIA_API_KEY
+#   npx wrangler secret put SUPABASE_URL
+#   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 # For local dev, copy .dev.vars.example to .dev.vars.

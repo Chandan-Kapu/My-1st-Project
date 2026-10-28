@@ -1,10 +1,10 @@
 {
-  "name": "temperature-playground",
+  "name": "my-1st-project",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev",
-    "deploy": "wrangler pages deploy"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
