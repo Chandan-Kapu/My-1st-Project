@@ -1,0 +1,9 @@
+name = "temperature-playground"
+compatibility_date = "2026-10-01"
+pages_build_output_dir = "public"
+
+# Secrets are NOT stored here. Set them with:
+#   npx wrangler pages secret put NVIDIA_API_KEY
+#   npx wrangler pages secret put SUPABASE_URL
+#   npx wrangler pages secret put SUPABASE_SERVICE_ROLE_KEY
+# For local dev, copy .dev.vars.example to .dev.vars.

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Temperature Playground</title>
+  <meta name="description" content="Run one prompt at temperature 0, 0.7 and 1.5 side by side, across model sizes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="/"><span class="blob" aria-hidden="true"></span>Temperature Playground</a>
+    <div class="status" id="status" aria-live="polite"></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">One prompt · three temperatures · any model size</p>
+      <h1>See what <em>temperature</em><br />actually does.</h1>
+      <p class="lede">Your prompt runs at <b>0</b>, <b>0.7</b> and <b>1.5</b> at the same time. Outputs land side by side, and every run is logged so you can compare later.</p>
+    </section>
+
+    <form class="composer" id="composer">
+      <label class="sr" for="prompt">Prompt</label>
+      <textarea id="prompt" rows="4" maxlength="4000" placeholder="Write a two-line poem about a lighthouse that's afraid of the dark." required></textarea>
+      <div class="controls">
+        <label class="field">
+          <span>Model size</span>
+          <select id="model"></select>
+        </label>
+        <label class="field">
+          <span>Max tokens</span>
+          <input id="maxTokens" type="number" min="16" max="1024" step="16" value="256" />
+        </label>
+        <button class="btn" id="runBtn" type="submit">Run ×3 <span aria-hidden="true">→</span></button>
+      </div>
+    </form>
+
+    <section class="grid" id="results" aria-label="Outputs by temperature"></section>
+
+    <section class="history">
+      <div class="history-head">
+        <h2>Past runs</h2>
+        <button class="btn ghost" id="refreshBtn" type="button">Refresh</button>
+      </div>
+      <ol id="history" class="history-list"></ol>
+    </section>
+  </main>
+
+  <footer class="foot">Powered by NVIDIA NIM · Logged to Supabase · Hosted on Cloudflare Pages</footer>
+
+  <template id="card-tpl">
+    <article class="card">
+      <header class="card-head">
+        <span class="temp"></span>
+        <span class="tag"></span>
+      </header>
+      <pre class="out"></pre>
+      <footer class="meta"></footer>
+    </article>
+  </template>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

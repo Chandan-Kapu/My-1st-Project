@@ -1,0 +1,136 @@
+:root {
+  --bg: #fbf6ee;
+  --surface: #ffffff;
+  --ink: #141414;
+  --muted: #5f5a52;
+  --line: #141414;
+  --accent: #ff7ac6;
+  --t0: #c9e4ff;
+  --t1: #ffe58a;
+  --t2: #ffb3d9;
+  --shadow: 4px 4px 0 var(--line);
+  --radius: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15130f;
+    --surface: #1f1c17;
+    --ink: #f6f0e6;
+    --muted: #b3ab9e;
+    --line: #f6f0e6;
+    --accent: #ff7ac6;
+    --t0: #23405e;
+    --t1: #5a4a12;
+    --t2: #5e2347;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15130f; --surface: #1f1c17; --ink: #f6f0e6; --muted: #b3ab9e; --line: #f6f0e6;
+  --t0: #23405e; --t1: #5a4a12; --t2: #5e2347;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+.nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  max-width: 1180px; margin: 0 auto; padding: 20px 16px;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font: 800 18px/1 "Bricolage Grotesque", sans-serif; color: var(--ink); text-decoration: none;
+}
+.blob { width: 22px; height: 22px; border-radius: 50% 50% 50% 12%; background: var(--accent); border: 2px solid var(--line); }
+.status { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.pill {
+  font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  border: 1.5px solid var(--line); background: var(--surface);
+}
+.pill.warn { background: var(--t1); }
+
+.hero { padding: 40px 0 28px; text-align: center; }
+.eyebrow {
+  display: inline-block; margin: 0 0 18px; padding: 6px 14px; border-radius: 999px;
+  background: var(--surface); border: 1.5px solid var(--line); font-size: 13px; font-weight: 600;
+}
+h1 {
+  margin: 0; font: 800 clamp(40px, 7vw, 84px)/0.98 "Bricolage Grotesque", sans-serif; letter-spacing: -0.03em;
+}
+h1 em {
+  font-style: normal; background: var(--accent); color: #141414;
+  padding: 0 0.15em; border-radius: 0.2em; border: 2px solid var(--line);
+}
+.lede { max-width: 620px; margin: 22px auto 0; color: var(--muted); font-size: 18px; }
+
+.composer {
+  background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 16px; margin: 12px auto 32px; max-width: 860px;
+}
+textarea {
+  width: 100%; border: 0; outline: 0; resize: vertical; background: transparent; color: var(--ink);
+  font: 500 18px/1.5 Inter, sans-serif; min-height: 110px;
+}
+.controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; border-top: 1.5px dashed var(--muted); padding-top: 14px; }
+.field { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+select, input[type="number"] {
+  font: 500 15px Inter, sans-serif; color: var(--ink); background: var(--bg);
+  border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 10px;
+}
+input[type="number"] { width: 110px; }
+
+.btn {
+  margin-left: auto; cursor: pointer; font: 700 16px "Bricolage Grotesque", sans-serif;
+  background: var(--ink); color: var(--bg); border: 2px solid var(--line); border-radius: 999px;
+  padding: 11px 22px; box-shadow: 3px 3px 0 var(--accent); transition: transform .12s, box-shadow .12s;
+}
+.btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--accent); }
+.btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--accent); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.btn.ghost { margin: 0; background: var(--surface); color: var(--ink); box-shadow: 3px 3px 0 var(--line); padding: 8px 16px; font-size: 14px; }
+
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  display: flex; flex-direction: column; min-height: 260px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 2px solid var(--line); }
+.card[data-i="0"] .card-head { background: var(--t0); }
+.card[data-i="1"] .card-head { background: var(--t1); }
+.card[data-i="2"] .card-head { background: var(--t2); }
+.temp { font: 800 28px/1 "Bricolage Grotesque", sans-serif; }
+.tag { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1.5px solid var(--line); }
+.out {
+  flex: 1; margin: 0; padding: 16px; white-space: pre-wrap; word-wrap: break-word;
+  font: 14px/1.6 "JetBrains Mono", monospace;
+}
+.out.empty { color: var(--muted); }
+.out.err { color: #c2185b; }
+.meta { padding: 10px 16px; font-size: 12px; color: var(--muted); border-top: 1.5px dashed var(--muted); }
+.card.loading .out::after { content: "thinking…"; color: var(--muted); animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
+
+.history { margin-top: 56px; }
+.history-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+h2 { font: 800 32px/1 "Bricolage Grotesque", sans-serif; letter-spacing: -0.02em; margin: 0; }
+.history-list { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 10px; }
+.history-list li {
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; cursor: pointer;
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px;
+}
+.history-list li:hover { box-shadow: 3px 3px 0 var(--line); }
+.history-list .p { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-list .d { font-size: 12px; color: var(--muted); }
+.history-list .empty { cursor: default; color: var(--muted); display: block; }
+
+.foot { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 16px 40px; }
