@@ -1,11 +1,21 @@
-import { DEFAULT_MODEL, LIMITS, json } from "../lib/shared.js";
+import { DEFAULT_MODEL, LIMITS, json, supabase, supabaseConfigured } from "../lib/shared.js";
 import { nvidiaChat } from "../lib/nvidia.js";
 
 const ROLES = new Set(["system", "user", "assistant"]);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// POST /api/chat  { prompt } or { messages: [{ role, content }], temperature?, maxTokens? }
+// Saves one request/response to Supabase. Failures go to Workers Logs, never to the user.
+async function logChat(env, row) {
+  try {
+    await supabase(env, "chat_logs", { method: "POST", body: JSON.stringify(row) });
+  } catch (err) {
+    console.error("chat_logs insert failed:", err.message);
+  }
+}
+
+// POST /api/chat  { prompt } or { messages: [{ role, content }], temperature?, maxTokens?, conversationId? }
 // Sends one chat request to NVIDIA with the default model (Nemotron 3.5 Lightning).
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, ctx }) {
   if (!env.NVIDIA_API_KEY) return json({ error: "NVIDIA_API_KEY secret is not set." }, 503);
 
   let body;
@@ -29,15 +39,30 @@ export async function onRequestPost({ request, env }) {
   const temperature = Math.min(Math.max(Number(body.temperature ?? 0.7) || 0, 0), 2);
   const maxTokens = Math.min(Math.max(parseInt(body.maxTokens, 10) || 1024, 16), LIMITS.maxTokens);
 
+  const cleanMessages = messages.map(({ role, content }) => ({ role, content }));
+  const log = {
+    conversation_id: UUID.test(body.conversationId ?? "") ? body.conversationId : null,
+    model: DEFAULT_MODEL,
+    temperature,
+    max_tokens: maxTokens,
+    prompt: cleanMessages.findLast((m) => m.role === "user")?.content ?? cleanMessages.at(-1).content,
+    messages: cleanMessages,
+  };
+  // Log after responding so the user doesn't wait on Supabase.
+  const save = (fields) => supabaseConfigured(env) && ctx?.waitUntil(logChat(env, { ...log, ...fields }));
+
   try {
-    const result = await nvidiaChat(env, {
-      model: DEFAULT_MODEL,
-      messages: messages.map(({ role, content }) => ({ role, content })),
-      temperature,
-      maxTokens,
+    const result = await nvidiaChat(env, { model: DEFAULT_MODEL, messages: cleanMessages, temperature, maxTokens });
+    save({
+      output: result.output,
+      reasoning: result.reasoning,
+      finish_reason: result.finishReason,
+      tokens: result.tokens,
+      latency_ms: result.latencyMs,
     });
     return json({ model: DEFAULT_MODEL, temperature, ...result });
   } catch (err) {
+    save({ error: err.message });
     return json({ error: err.message }, 502);
   }
 }

@@ -145,6 +145,7 @@ $("#refreshBtn").addEventListener("click", loadHistory);
 
 // Chat: sends the whole conversation to /api/chat each turn.
 let chatMessages = [];
+let conversationId = null;
 
 function addBubble(cls, text, meta) {
   const li = document.createElement("li");
@@ -163,6 +164,7 @@ function addBubble(cls, text, meta) {
 
 function resetChat() {
   chatMessages = [];
+  conversationId = crypto.randomUUID?.() ?? null;
   $("#chatLog").replaceChildren();
   addBubble("hint", "No messages yet.");
 }
@@ -182,7 +184,7 @@ $("#chatForm").addEventListener("submit", async (e) => {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ messages: chatMessages.slice(-20) }),
+      body: JSON.stringify({ messages: chatMessages.slice(-20), conversationId }),
     });
     const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     pending.remove();

@@ -36,7 +36,10 @@ Response: `{ "model", "temperature", "output", "tokens", "latencyMs" }`. Without
 ## Set up Supabase
 
 1. Create a project at supabase.com.
-2. Run `supabase/schema.sql` in the SQL editor.
+2. Run `supabase/schema.sql` in the SQL editor. It creates:
+   - `runs`: every **Run ×3** (prompt, model, and all three outputs)
+   - `chat_logs`: every Chat box message and reply, including failed calls
+   - `all_queries`: a view with both, one row per response: `select * from all_queries order by created_at desc;`
 3. Copy the project URL and the **service_role** key (Settings → API) into your secrets.
 
 ## Deploy to Cloudflare Workers
