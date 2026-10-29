@@ -73,3 +73,24 @@ Creates a written summary of every new PowerPoint file in the Training folder.
   facts; if a slide is image-only, say "image/diagram slide — no text".
 - Never modify or move the original PPT files.
 - Keep each summary under about 600 words.
+
+## Automatic mode (folder watcher)
+
+`scripts/watch_training.ps1` watches the Training folder on Windows and runs
+`claude -p` with this skill whenever a new deck is saved. It waits until the
+file has finished saving, skips decks that already have a summary, and logs to
+`Training\Summaries\watcher.log`. A failed deck is not retried until it is
+saved again.
+
+Install once (starts now and at every sign-in), from PowerShell in the repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .claude\skills\Applied_AI_Test_Skill\scripts\install_watcher.ps1
+```
+
+Remove it with the same command plus `-Uninstall`. Requires the `claude`
+command on PATH (signed in) and `python-pptx`.
+
+When run by the watcher, nobody is there to answer questions: do not ask the
+user anything, just write the summary file (or explain the problem in your
+final message, which goes to the log).
