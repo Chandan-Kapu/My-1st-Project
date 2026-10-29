@@ -17,7 +17,7 @@ export async function onRequestGet({ env }) {
         const rows = await supabase(env, `${table}?select=id&limit=1`);
         report.tables[table] = `ok (${rows.length ? "has rows" : "empty"})`;
       } catch (err) {
-        report.tables[table] = explain(err.message);
+        report.tables[table] = explain(err.message ?? String(err));
       }
     }
   } else {
@@ -54,6 +54,8 @@ function describeKey(env, key) {
 
 function explain(message) {
   if (/PGRST205|does not exist|Could not find the table/i.test(message)) return `MISSING TABLE: run supabase/schema.sql in the SQL Editor (${message.slice(0, 120)})`;
-  if (/401|403|Invalid API key|permission denied/i.test(message)) return `KEY REJECTED: check SUPABASE_SECRET_KEY (${message.slice(0, 120)})`;
+  if (/42501|permission denied/i.test(message)) return `NO PERMISSION: run the latest supabase/schema.sql again in the SQL Editor (${message.slice(0, 120)})`;
+  if (/401|403|Invalid API key/i.test(message)) return `KEY REJECTED: check SUPABASE_SECRET_KEY belongs to this project (${message.slice(0, 120)})`;
+  if (/ENOTFOUND|fetch failed|Name not resolved|error code: 1016/i.test(message)) return `CAN'T REACH SUPABASE: check SUPABASE_URL (${message.slice(0, 120)})`;
   return `ERROR: ${message.slice(0, 200)}`;
 }

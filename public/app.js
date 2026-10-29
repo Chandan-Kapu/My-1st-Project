@@ -85,6 +85,18 @@ async function loadConfig() {
   $("#model").replaceChildren(...models.map((m) => new Option(m.label, m.id)));
   $("#model").value = cfg.defaultModel ?? models[0]?.id;
   setStatus(cfg);
+  if (cfg.logging) checkHealth();
+}
+
+// If Supabase is configured but not reachable, say why right on the page.
+async function checkHealth() {
+  try {
+    const h = await fetch("/api/health").then((r) => r.json());
+    if (h.ok) return;
+    const problems = [h.supabase_url, h.supabase_key, ...Object.values(h.tables ?? {})]
+      .filter((v) => typeof v === "string" && !v.startsWith("ok"));
+    if (problems.length) addStatusPill(`Supabase: ${problems[0]}`, "warn");
+  } catch {}
 }
 
 async function loadHistory() {

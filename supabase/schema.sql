@@ -61,6 +61,11 @@ revoke all on table public.runs from anon, authenticated;
 alter table public.chat_logs enable row level security;
 revoke all on table public.chat_logs from anon, authenticated;
 
+-- The secret key acts as the service_role database role. Grant it access explicitly:
+-- newer projects don't always expose new tables to the Data API automatically.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table public.runs, public.chat_logs to service_role;
+
 -- ---------------------------------------------------------------------------
 -- 4. Comparison view: one row per (run, temperature)
 -- ---------------------------------------------------------------------------
@@ -84,6 +89,7 @@ from public.runs r
 cross join lateral jsonb_array_elements(r.results) as res;
 
 revoke all on public.run_outputs from anon, authenticated;
+grant select on public.run_outputs to service_role;
 
 -- ---------------------------------------------------------------------------
 -- 5. Everything in one place: every query and response from the website
@@ -100,6 +106,7 @@ select 'chat', id, conversation_id, created_at, model,
 from public.chat_logs;
 
 revoke all on public.all_queries from anon, authenticated;
+grant select on public.all_queries to service_role;
 
 -- ---------------------------------------------------------------------------
 -- 6. Optional cleanup: delete runs and chat logs older than N days
@@ -124,3 +131,7 @@ as $$
 $$;
 
 revoke execute on function public.delete_old_runs(int) from public, anon, authenticated;
+grant execute on function public.delete_old_runs(int) to service_role;
+
+-- Make the Data API see the new tables right away.
+notify pgrst, 'reload schema';
