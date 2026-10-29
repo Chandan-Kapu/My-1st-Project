@@ -41,6 +41,22 @@
 
     <section class="grid" id="results" aria-label="Outputs by temperature"></section>
 
+    <section class="chat" aria-labelledby="chat-title">
+      <div class="history-head">
+        <h2 id="chat-title">Chat</h2>
+        <button class="btn ghost" id="chatClear" type="button">Clear</button>
+      </div>
+      <p class="chat-sub">Talks to <code>/api/chat</code> using <b>Nemotron 3.5 Lightning</b> at temperature 0.7. The conversation stays in this tab.</p>
+      <div class="chat-box">
+        <ol class="chat-log" id="chatLog" aria-live="polite"></ol>
+        <form class="chat-form" id="chatForm">
+          <label class="sr" for="chatInput">Message</label>
+          <input id="chatInput" type="text" maxlength="4000" placeholder="Say hi to Nemotron…" autocomplete="off" required />
+          <button class="btn" id="chatSend" type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+
     <section class="history">
       <div class="history-head">
         <h2>Past runs</h2>

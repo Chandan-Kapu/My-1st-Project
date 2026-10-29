@@ -121,5 +121,64 @@ $("#composer").addEventListener("submit", async (e) => {
 });
 $("#refreshBtn").addEventListener("click", loadHistory);
 
+// Chat: sends the whole conversation to /api/chat each turn.
+let chatMessages = [];
+
+function addBubble(cls, text, meta) {
+  const li = document.createElement("li");
+  li.className = cls;
+  li.textContent = text;
+  if (meta) {
+    const m = document.createElement("span");
+    m.className = "meta-line";
+    m.textContent = meta;
+    li.append(m);
+  }
+  $("#chatLog").append(li);
+  li.scrollIntoView({ block: "nearest" });
+  return li;
+}
+
+function resetChat() {
+  chatMessages = [];
+  $("#chatLog").replaceChildren();
+  addBubble("hint", "No messages yet.");
+}
+
+$("#chatForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = $("#chatInput");
+  const text = input.value.trim();
+  if (!text) return;
+  $("#chatLog").querySelector(".hint")?.remove();
+  addBubble("user", text);
+  chatMessages.push({ role: "user", content: text });
+  input.value = "";
+  $("#chatSend").disabled = true;
+  const pending = addBubble("assistant", "thinking…");
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ messages: chatMessages.slice(-20) }),
+    });
+    const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    pending.remove();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    chatMessages.push({ role: "assistant", content: data.output });
+    const meta = [data.tokens != null && `${data.tokens} tokens`, `${(data.latencyMs / 1000).toFixed(1)}s`].filter(Boolean).join(" · ");
+    addBubble("assistant", data.output || "(empty reply)", meta);
+  } catch (err) {
+    pending.remove();
+    chatMessages.pop();
+    addBubble("error", err.message);
+  } finally {
+    $("#chatSend").disabled = false;
+    input.focus();
+  }
+});
+$("#chatClear").addEventListener("click", resetChat);
+resetChat();
+
 renderCards(null);
 loadConfig().then(loadHistory).catch(() => setStatus({ mock: true, logging: false }));
