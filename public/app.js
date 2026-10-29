@@ -27,12 +27,34 @@ function renderCards(results, { loading = false } = {}) {
       out.textContent = r.error;
       meta.textContent = "Failed";
     } else {
-      out.textContent = r.output;
-      meta.textContent = [r.tokens != null && `${r.tokens} tokens`, r.latencyMs && `${(r.latencyMs / 1000).toFixed(1)}s`]
-        .filter(Boolean).join(" · ") || "done";
+      if (r.reasoning) {
+        const thinking = node.querySelector(".thinking");
+        thinking.hidden = false;
+        thinking.querySelector("pre").textContent = r.reasoning;
+      }
+      if (r.output) {
+        out.textContent = r.output;
+      } else {
+        out.classList.add("empty");
+        out.textContent = emptyReason(r);
+      }
+      meta.textContent = [
+        r.tokens != null && `${r.tokens} tokens`,
+        r.latencyMs && `${(r.latencyMs / 1000).toFixed(1)}s`,
+        r.finishReason === "length" && "cut off at max tokens",
+      ].filter(Boolean).join(" · ") || "done";
     }
     grid.append(node);
   });
+}
+
+function emptyReason(r) {
+  if (r.finishReason === "length") {
+    return r.reasoning
+      ? "The model used all its tokens thinking before it could answer. Raise Max tokens and run again."
+      : "Hit max tokens before any answer. Raise Max tokens and run again.";
+  }
+  return "(The model returned an empty answer.)";
 }
 
 function setStatus({ mock, logging }) {
@@ -165,9 +187,14 @@ $("#chatForm").addEventListener("submit", async (e) => {
     const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     pending.remove();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    if (!data.output) throw new Error(emptyReason(data));
     chatMessages.push({ role: "assistant", content: data.output });
-    const meta = [data.tokens != null && `${data.tokens} tokens`, `${(data.latencyMs / 1000).toFixed(1)}s`].filter(Boolean).join(" · ");
-    addBubble("assistant", data.output || "(empty reply)", meta);
+    const meta = [
+      data.tokens != null && `${data.tokens} tokens`,
+      `${(data.latencyMs / 1000).toFixed(1)}s`,
+      data.finishReason === "length" && "cut off",
+    ].filter(Boolean).join(" · ");
+    addBubble("assistant", data.output, meta);
   } catch (err) {
     pending.remove();
     chatMessages.pop();

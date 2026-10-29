@@ -25,7 +25,7 @@ export async function onRequestPost({ request, env }) {
 
   const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
   const model = body.model;
-  const maxTokens = Math.min(Math.max(parseInt(body.maxTokens, 10) || 256, 16), LIMITS.maxTokens);
+  const maxTokens = Math.min(Math.max(parseInt(body.maxTokens, 10) || 1024, 16), LIMITS.maxTokens);
 
   if (!prompt) return json({ error: "Prompt is required." }, 400);
   if (prompt.length > LIMITS.promptChars) return json({ error: `Prompt is over ${LIMITS.promptChars} characters.` }, 400);

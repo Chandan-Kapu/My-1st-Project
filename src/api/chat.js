@@ -27,7 +27,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const temperature = Math.min(Math.max(Number(body.temperature ?? 0.7) || 0, 0), 2);
-  const maxTokens = Math.min(Math.max(parseInt(body.maxTokens, 10) || 512, 16), LIMITS.maxTokens);
+  const maxTokens = Math.min(Math.max(parseInt(body.maxTokens, 10) || 1024, 16), LIMITS.maxTokens);
 
   try {
     const result = await nvidiaChat(env, {

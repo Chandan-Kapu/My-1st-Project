@@ -115,6 +115,9 @@ input[type="number"] { width: 110px; }
   font: 14px/1.6 "JetBrains Mono", monospace;
 }
 .out.empty { color: var(--muted); }
+.thinking { margin: 12px 16px 0; border: 1.5px dashed var(--muted); border-radius: 12px; }
+.thinking summary { cursor: pointer; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.thinking pre { margin: 0; padding: 0 12px 10px; max-height: 200px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font: 12px/1.5 "JetBrains Mono", monospace; color: var(--muted); }
 .out.err { color: #c2185b; }
 .meta { padding: 10px 16px; font-size: 12px; color: var(--muted); border-top: 1.5px dashed var(--muted); }
 .card.loading .out::after { content: "thinking…"; color: var(--muted); animation: pulse 1s infinite alternate; }

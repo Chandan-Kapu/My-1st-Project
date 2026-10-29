@@ -14,7 +14,7 @@ export const MODELS = {
 
 export const DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
 
-export const LIMITS = { promptChars: 4000, maxTokens: 1024 };
+export const LIMITS = { promptChars: 4000, maxTokens: 4096 };
 
 export function json(data, status = 200) {
   return new Response(JSON.stringify(data), {

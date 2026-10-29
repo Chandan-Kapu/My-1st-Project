@@ -33,7 +33,7 @@
         </label>
         <label class="field">
           <span>Max tokens</span>
-          <input id="maxTokens" type="number" min="16" max="1024" step="16" value="256" />
+          <input id="maxTokens" type="number" min="16" max="4096" step="16" value="1024" />
         </label>
         <button class="btn" id="runBtn" type="submit">Run ×3 <span aria-hidden="true">→</span></button>
       </div>
@@ -74,6 +74,7 @@
         <span class="temp"></span>
         <span class="tag"></span>
       </header>
+      <details class="thinking" hidden><summary>Thinking</summary><pre></pre></details>
       <pre class="out"></pre>
       <footer class="meta"></footer>
     </article>

@@ -10,10 +10,14 @@ create table if not exists public.runs (
   created_at  timestamptz not null default now(),
   prompt      text not null check (char_length(prompt) between 1 and 4000),
   model       text not null,
-  max_tokens  int  not null check (max_tokens between 16 and 1024),
+  max_tokens  int  not null check (max_tokens between 16 and 4096),
   -- [{ "temperature": 0, "output": "...", "tokens": 42, "latencyMs": 812, "error": null }, ...]
   results     jsonb not null check (jsonb_typeof(results) = 'array')
 );
+
+-- Upgrade from the earlier 1024-token limit (no-op on a fresh install).
+alter table public.runs drop constraint if exists runs_max_tokens_check;
+alter table public.runs add constraint runs_max_tokens_check check (max_tokens between 16 and 4096);
 
 comment on table public.runs is 'Each prompt run at temperatures 0, 0.7 and 1.5 (written by /api/run).';
 

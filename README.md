@@ -64,6 +64,7 @@ The parts that keep secrets safe are done: API keys stay on the server, the brow
 - [ ] **Rate limiting.** Anyone with the URL can spend your NVIDIA credits, and each click makes 3 calls. Add a Cloudflare rate-limiting rule on `/api/run`, or Turnstile.
 - [ ] **Authentication.** Right now `/api/runs` shows every user's prompts to everyone. Add Supabase Auth or Cloudflare Access, and store a `user_id` on each run.
 - [ ] **Model limits.** Some NVIDIA models only accept temperature up to 1.0, so the 1.5 column may show an API error for them. Check each model on build.nvidia.com.
+- [ ] **Reasoning models.** Nemotron thinks before answering, and the thinking counts toward Max tokens. The site shows the thinking in a collapsible box and says when a column ran out of tokens, but keep Max tokens at 1024 or more for these models.
 - [ ] **Timeouts.** Calls to the 405B model can be slow. Each call times out after 60s. Consider streaming the responses.
 - [ ] **Monitoring.** Turn on Workers Logs, and watch for `logError` in responses.
 - [ ] **Data policy.** Prompts are stored indefinitely. Tell users, and add a retention or cleanup job.
