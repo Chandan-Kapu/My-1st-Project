@@ -23,17 +23,24 @@ export function json(data, status = 200) {
   });
 }
 
+// Server-side Supabase key: the new secret key (sb_secret_...), or the legacy service_role JWT.
+function supabaseKey(env) {
+  return env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+}
+
 export function supabaseConfigured(env) {
-  return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(env.SUPABASE_URL && supabaseKey(env));
 }
 
 // Talks to Supabase over its REST (PostgREST) API with fetch — no SDK needed on Workers.
 export async function supabase(env, path, init = {}) {
+  const key = supabaseKey(env);
   const res = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${path}`, {
     ...init,
     headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-      authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      apikey: key,
+      // New sb_ keys aren't JWTs and go in apikey only; the legacy JWT key also goes in Authorization.
+      ...(key.startsWith("sb_") ? {} : { authorization: `Bearer ${key}` }),
       "content-type": "application/json",
       ...init.headers,
     },

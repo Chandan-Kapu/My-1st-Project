@@ -18,5 +18,5 @@ enabled = true
 # Secrets are NOT stored here. Add them in the dashboard (Settings → Variables and Secrets) or with:
 #   npx wrangler secret put NVIDIA_API_KEY
 #   npx wrangler secret put SUPABASE_URL
-#   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+#   npx wrangler secret put SUPABASE_SECRET_KEY
 # For local dev, copy .dev.vars.example to .dev.vars.

@@ -54,7 +54,7 @@ create index if not exists chat_logs_conversation_idx on public.chat_logs (conve
 -- ---------------------------------------------------------------------------
 -- 3. Security: only the server may touch these tables
 -- ---------------------------------------------------------------------------
--- The Cloudflare Worker uses the service_role key, which bypasses RLS.
+-- The Cloudflare Worker uses the secret key (or legacy service_role key), which bypasses RLS.
 -- With RLS on and no policies, the public anon key can read or write nothing.
 alter table public.runs enable row level security;
 revoke all on table public.runs from anon, authenticated;

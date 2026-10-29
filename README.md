@@ -40,7 +40,7 @@ Response: `{ "model", "temperature", "output", "tokens", "latencyMs" }`. Without
    - `runs`: every **Run ×3** (prompt, model, and all three outputs)
    - `chat_logs`: every Chat box message and reply, including failed calls
    - `all_queries`: a view with both, one row per response: `select * from all_queries order by created_at desc;`
-3. Copy the project URL and the **service_role** key (Settings → API) into your secrets.
+3. Copy the project URL and the **secret** key (`sb_secret_…`, under Settings → API Keys) into your secrets as `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. Older projects can use the legacy **service_role** key as `SUPABASE_SERVICE_ROLE_KEY` instead. The publishable key is not needed.
 
 ## Deploy to Cloudflare Workers
 
@@ -49,14 +49,14 @@ Response: `{ "model", "temperature", "output", "tokens", "latencyMs" }`. Without
 - Build command: leave empty
 - Deploy command: `npx wrangler deploy`
 
-Then add `NVIDIA_API_KEY`, `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` under the Worker's Settings → Variables and Secrets (as type **Secret**) and redeploy.
+Then add `NVIDIA_API_KEY`, `SUPABASE_URL` and `SUPABASE_SECRET_KEY` under the Worker's Settings → Variables and Secrets (as type **Secret**) and redeploy.
 
 **From your computer:**
 
 ```bash
 npx wrangler secret put NVIDIA_API_KEY
 npx wrangler secret put SUPABASE_URL
-npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret put SUPABASE_SECRET_KEY
 npm run deploy
 ```
 
