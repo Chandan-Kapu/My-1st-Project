@@ -24,18 +24,23 @@ export function json(data, status = 200) {
 }
 
 // Server-side Supabase key: the new secret key (sb_secret_...), or the legacy service_role JWT.
-function supabaseKey(env) {
-  return env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+export function supabaseKey(env) {
+  return (env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+}
+
+// Accepts "https://abc.supabase.co", with or without a trailing "/" or "/rest/v1".
+export function supabaseUrl(env) {
+  return (env.SUPABASE_URL || "").trim().replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
 }
 
 export function supabaseConfigured(env) {
-  return Boolean(env.SUPABASE_URL && supabaseKey(env));
+  return Boolean(supabaseUrl(env) && supabaseKey(env));
 }
 
 // Talks to Supabase over its REST (PostgREST) API with fetch — no SDK needed on Workers.
 export async function supabase(env, path, init = {}) {
   const key = supabaseKey(env);
-  const res = await fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${path}`, {
+  const res = await fetch(`${supabaseUrl(env)}/rest/v1/${path}`, {
     ...init,
     headers: {
       apikey: key,

@@ -57,6 +57,14 @@ function emptyReason(r) {
   return "(The model returned an empty answer.)";
 }
 
+function addStatusPill(text, cls = "") {
+  const el = document.createElement("span");
+  el.className = `pill ${cls}`;
+  el.textContent = text.length > 120 ? `${text.slice(0, 120)}…` : text;
+  el.title = text;
+  $("#status").append(el);
+}
+
 function setStatus({ mock, logging }) {
   const pills = [
     mock ? ["Mock mode — no NVIDIA key", "warn"] : ["NVIDIA live", ""],
@@ -135,6 +143,7 @@ $("#composer").addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     renderCards(data.results);
     if (data.logged) loadHistory();
+    else if (data.logError) addStatusPill(`Not saved: ${data.logError}`, "warn");
   } catch (err) {
     renderCards(temperatures.map((t) => ({ temperature: t, error: err.message })));
   } finally {
