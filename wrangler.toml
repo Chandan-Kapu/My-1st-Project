@@ -3,6 +3,10 @@ name = "my-1st-project"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
+# Keep variables added in the dashboard when Git deploys run `wrangler deploy`
+# (otherwise plain-text variables not listed here are removed on every deploy).
+keep_vars = true
+
 # Serves public/ (index.html, app.js, styles.css). Requests that don't match a file go to the Worker.
 [assets]
 directory = "./public"
