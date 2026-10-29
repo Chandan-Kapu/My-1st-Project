@@ -1,30 +1,5 @@
 import { TEMPERATURES, MODELS, LIMITS, json, supabase, supabaseConfigured } from "../lib/shared.js";
-
-const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
-
-async function callNvidia(env, { prompt, model, maxTokens, temperature }) {
-  const started = Date.now();
-  const res = await fetch(NVIDIA_URL, {
-    method: "POST",
-    headers: { authorization: `Bearer ${env.NVIDIA_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: "user", content: prompt }],
-      temperature,
-      top_p: 1,
-      max_tokens: maxTokens,
-      stream: false,
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (!res.ok) throw new Error(`NVIDIA ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = await res.json();
-  return {
-    output: data.choices?.[0]?.message?.content ?? "",
-    tokens: data.usage?.completion_tokens ?? null,
-    latencyMs: Date.now() - started,
-  };
-}
+import { nvidiaChat } from "../lib/nvidia.js";
 
 // Used until NVIDIA_API_KEY is set, so the UI can be built and tried without keys.
 function mockNvidia({ prompt, temperature }) {
@@ -61,7 +36,7 @@ export async function onRequestPost({ request, env }) {
   // Fire all three temperatures in parallel; one failing column shouldn't sink the others.
   const settled = await Promise.allSettled(
     TEMPERATURES.map((temperature) =>
-      mock ? mockNvidia({ prompt, temperature }) : callNvidia(env, { prompt, model, maxTokens, temperature })
+      mock ? mockNvidia({ prompt, temperature }) : nvidiaChat(env, { model, messages: [{ role: "user", content: prompt }], temperature, maxTokens })
     )
   );
   const results = settled.map((s, i) => ({

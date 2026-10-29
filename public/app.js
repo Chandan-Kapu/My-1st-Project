@@ -53,7 +53,7 @@ async function loadConfig() {
   temperatures = cfg.temperatures;
   models = cfg.models;
   $("#model").replaceChildren(...models.map((m) => new Option(m.label, m.id)));
-  $("#model").value = models[1]?.id ?? models[0]?.id;
+  $("#model").value = cfg.defaultModel ?? models[0]?.id;
   setStatus(cfg);
 }
 

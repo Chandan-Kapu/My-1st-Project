@@ -5,6 +5,7 @@ One prompt runs three times, at temperature **0**, **0.7** and **1.5**, with the
 - **Frontend:** static HTML/CSS/JS in `public/`
 - **Backend:** a Cloudflare Worker (`src/index.js`) that serves `public/` as static assets and routes `/api/*` to `src/api/`
   - `GET /api/config`: models, temperatures, and whether keys are set
+  - `POST /api/chat`: `{ prompt }` or `{ messages, temperature?, maxTokens? }` → one chat request to `nvidia/nemotron-3.5-lightning-30b-a3b`
   - `POST /api/run`: `{ prompt, model, maxTokens }` → runs 3 temperatures in parallel via NVIDIA NIM, then logs the run
   - `GET /api/runs`: the 20 most recent runs
 - **LLM:** NVIDIA's OpenAI-compatible API (`integrate.api.nvidia.com`)
@@ -19,6 +20,18 @@ npm install
 cp .dev.vars.example .dev.vars   # fill in keys, or leave blank for mock mode
 npm run dev                      # http://localhost:8787
 ```
+
+## Send a chat request
+
+Once `NVIDIA_API_KEY` is set as a Cloudflare secret:
+
+```bash
+curl -X POST https://my-1st-project.<your-subdomain>.workers.dev/api/chat \
+  -H 'content-type: application/json' \
+  -d '{"prompt": "Explain temperature in LLMs in one sentence."}'
+```
+
+Response: `{ "model", "temperature", "output", "tokens", "latencyMs" }`. Without the secret, `/api/chat` returns 503.
 
 ## Set up Supabase
 

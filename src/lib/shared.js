@@ -1,4 +1,4 @@
-// Shared helpers for Pages Functions.
+// Shared helpers for the Worker.
 
 export const TEMPERATURES = [0, 0.7, 1.5];
 
@@ -7,9 +7,12 @@ export const TEMPERATURES = [0, 0.7, 1.5];
 export const MODELS = {
   "meta/llama-3.2-3b-instruct": { label: "Llama 3.2 · 3B", size: "3B" },
   "meta/llama-3.1-8b-instruct": { label: "Llama 3.1 · 8B", size: "8B" },
+  "nvidia/nemotron-3.5-lightning-30b-a3b": { label: "Nemotron 3.5 Lightning · 30B (3B active)", size: "30B-A3B" },
   "meta/llama-3.3-70b-instruct": { label: "Llama 3.3 · 70B", size: "70B" },
   "meta/llama-3.1-405b-instruct": { label: "Llama 3.1 · 405B", size: "405B" },
 };
+
+export const DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
 
 export const LIMITS = { promptChars: 4000, maxTokens: 1024 };
 
