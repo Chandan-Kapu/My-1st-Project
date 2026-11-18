@@ -1,7 +1,9 @@
-import { TEMPERATURES, MODELS, LIMITS, json, supabase, supabaseConfigured, readJsonObject, clientId } from "../lib/shared.js";
+import {
+  TEMPERATURES, MODELS, LIMITS, NVIDIA_MISSING, json, supabase, supabaseConfigured, readJsonObject, clientId, nvidiaMode, storableText,
+} from "../lib/shared.js";
 import { nvidiaChat } from "../lib/nvidia.js";
 
-// Used until NVIDIA_API_KEY is set, so the UI can be built and tried without keys.
+// Used on localhost (or with MOCK_MODE=true) until NVIDIA_API_KEY is set, so the UI can be tried without keys.
 function mockNvidia({ prompt, temperature }) {
   const flavor = {
     0: "Deterministic: the same most-likely tokens every time.",
@@ -16,6 +18,9 @@ function mockNvidia({ prompt, temperature }) {
 }
 
 export async function onRequestPost({ request, env }) {
+  const mode = nvidiaMode(request, env);
+  if (mode === "missing") return json({ error: NVIDIA_MISSING }, 503);
+
   const { body, error } = await readJsonObject(request);
   if (error) return error;
 
@@ -25,14 +30,16 @@ export async function onRequestPost({ request, env }) {
 
   if (!prompt) return json({ error: "Prompt is required." }, 400);
   if (prompt.length > LIMITS.promptChars) return json({ error: `Prompt is over ${LIMITS.promptChars} characters.` }, 400);
-  if (!MODELS[model]) return json({ error: "Unknown model." }, 400);
+  if (!storableText(prompt)) return json({ error: "Prompt contains characters that can't be saved." }, 400);
+  // Own keys only: "__proto__", "constructor" or an array must not pass as a model ID.
+  if (typeof model !== "string" || !Object.hasOwn(MODELS, model)) return json({ error: "Unknown model." }, 400);
 
-  const mock = !env.NVIDIA_API_KEY;
+  const mock = mode === "mock";
 
   // Fire all three temperatures in parallel; one failing column shouldn't sink the others.
   const settled = await Promise.allSettled(
     TEMPERATURES.map((temperature) =>
-      mock ? mockNvidia({ prompt, temperature }) : nvidiaChat(env, { model, messages: [{ role: "user", content: prompt }], temperature, maxTokens })
+      mock ? mockNvidia({ prompt, temperature }) : nvidiaChat(env, { model, messages: [{ role: "user", content: prompt }], temperature, maxTokens, signal: request.signal })
     )
   );
   const results = settled.map((s, i) => ({
@@ -51,7 +58,8 @@ export async function onRequestPost({ request, env }) {
       });
       runId = row?.id ?? null;
     } catch (err) {
-      logError = err.message;
+      console.error("runs insert failed:", err.message);
+      logError = "Couldn't save this run to the database.";
     }
   }
 

@@ -1,7 +1,27 @@
 import { json, supabase, supabaseKey, supabaseUrl } from "../lib/shared.js";
 
-// GET /api/health: checks the setup and says what's wrong, without revealing any key.
-export async function onRequestGet({ env }) {
+// The public answer is cached per Worker instance, so page views don't each cost two Supabase reads.
+let cached = { at: 0, ok: false };
+
+// GET /api/health: anyone gets { ok }. With the header `x-health-token: <HEALTH_TOKEN>` it returns the
+// full report: what's set up and what's wrong, without revealing any key.
+export async function onRequestGet({ request, env }) {
+  const full = await hasToken(request, env);
+  if (!full && Date.now() - cached.at < 60_000) return json({ ok: cached.ok });
+  const report = await check(env);
+  cached = { at: Date.now(), ok: report.ok };
+  return json(full ? report : { ok: report.ok });
+}
+
+async function hasToken(request, env) {
+  const expected = env.HEALTH_TOKEN ?? "";
+  const given = request.headers.get("x-health-token") ?? "";
+  if (!expected || given.length !== expected.length) return false;
+  const enc = new TextEncoder();
+  return crypto.subtle.timingSafeEqual(enc.encode(given), enc.encode(expected));
+}
+
+async function check(env) {
   const url = supabaseUrl(env);
   const key = supabaseKey(env);
   const report = {
@@ -26,7 +46,7 @@ export async function onRequestGet({ env }) {
 
   report.ok = Boolean(env.NVIDIA_API_KEY) && typeof report.tables === "object" &&
     Object.values(report.tables).every((v) => v.startsWith("ok"));
-  return json(report);
+  return report;
 }
 
 function checkUrl(url) {

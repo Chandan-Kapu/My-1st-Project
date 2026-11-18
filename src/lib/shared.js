@@ -14,7 +14,7 @@ export const MODELS = {
 
 export const DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
 
-export const LIMITS = { promptChars: 4000, maxTokens: 4096 };
+export const LIMITS = { promptChars: 4000, maxTokens: 4096, bodyBytes: 64 * 1024 };
 
 export function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -31,15 +31,54 @@ export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 export async function readJsonObject(request) {
   const type = (request.headers.get("content-type") ?? "").toLowerCase();
   if (!type.startsWith("application/json")) return { error: json({ error: "Send the body as application/json." }, 415) };
+  const text = await readCapped(request, LIMITS.bodyBytes);
+  if (text === null) return { error: json({ error: `Body is over ${LIMITS.bodyBytes / 1024} KB.` }, 413) };
   let body;
   try {
-    body = await request.json();
+    body = JSON.parse(text);
   } catch {
     return { error: json({ error: "Body must be JSON." }, 400) };
   }
   if (!body || typeof body !== "object" || Array.isArray(body)) return { error: json({ error: "Body must be a JSON object." }, 400) };
   return { body };
 }
+
+// Reads the body as text, stopping as soon as it passes `max` bytes (null if it does),
+// so a huge body is never buffered or parsed in full.
+async function readCapped(request, max) {
+  if (Number(request.headers.get("content-length")) > max) return null;
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return new Blob(chunks).text();
+}
+
+// Postgres can't store NUL characters or unpaired surrogates, so a prompt containing them
+// would silently skip logging. Reject them up front.
+export function storableText(text) {
+  return !text.includes("\u0000") && text.isWellFormed();
+}
+
+// "live" with a key; "mock" (fake outputs, nothing saved) only on localhost or when MOCK_MODE=true,
+// so a production deploy that lost its key fails loudly instead of serving fake answers.
+export function nvidiaMode(request, env) {
+  if (env.NVIDIA_API_KEY) return "live";
+  const { hostname } = new URL(request.url);
+  return env.MOCK_MODE === "true" || hostname === "localhost" || hostname === "127.0.0.1" ? "mock" : "missing";
+}
+
+export const NVIDIA_MISSING = "The site isn't configured: NVIDIA_API_KEY is not set.";
 
 // Random per-browser ID (sent as x-client-id) so Past runs only shows the runs made in that browser.
 export function clientId(request) {
@@ -73,7 +112,10 @@ export async function supabase(env, path, init = {}) {
       "content-type": "application/json",
       ...init.headers,
     },
+    signal: AbortSignal.timeout(8_000),
   });
-  if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
-  return res.status === 204 ? null : res.json();
+  // Inserts without `prefer: return=representation` answer 201 with an empty body.
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Supabase ${res.status}: ${text}`);
+  return text ? JSON.parse(text) : null;
 }

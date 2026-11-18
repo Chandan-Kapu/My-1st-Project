@@ -2,6 +2,8 @@
 name = "my-1st-project"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
+# Lets request.signal fire when the visitor disconnects, so unfinished NVIDIA calls are cancelled.
+compatibility_flags = ["enable_request_signal"]
 
 # Keep variables added in the dashboard when Git deploys run `wrangler deploy`
 # (otherwise plain-text variables not listed here are removed on every deploy).
@@ -31,4 +33,5 @@ enabled = true
 #   npx wrangler secret put NVIDIA_API_KEY
 #   npx wrangler secret put SUPABASE_URL
 #   npx wrangler secret put SUPABASE_SECRET_KEY
+#   npx wrangler secret put HEALTH_TOKEN   (optional: full /api/health report)
 # For local dev, copy .dev.vars.example to .dev.vars.

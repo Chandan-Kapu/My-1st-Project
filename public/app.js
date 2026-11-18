@@ -4,6 +4,7 @@ const TAGS = { 0: "deterministic", 0.7: "balanced", 1.5: "chaotic" };
 let temperatures = [0, 0.7, 1.5];
 let models = [];
 let limits = { promptChars: 4000 };
+let mock = false;
 
 // Random ID kept in this browser, so Past runs only lists runs made here.
 const clientId = (() => {
@@ -77,9 +78,15 @@ function addStatusPill(text, cls = "") {
   $("#status").append(el);
 }
 
-function setStatus({ mock, logging }) {
+const NVIDIA_PILLS = {
+  live: ["NVIDIA live", ""],
+  mock: ["Mock mode — no NVIDIA key", "warn"],
+  missing: ["NVIDIA key missing", "warn"],
+};
+
+function setStatus({ nvidia, logging }) {
   const pills = [
-    mock ? ["Mock mode — no NVIDIA key", "warn"] : ["NVIDIA live", ""],
+    NVIDIA_PILLS[nvidia] ?? NVIDIA_PILLS.missing,
     logging ? ["Supabase logging on", ""] : ["Logging off", "warn"],
   ];
   $("#status").replaceChildren(...pills.map(([text, cls]) => {
@@ -91,25 +98,33 @@ function setStatus({ mock, logging }) {
 }
 
 async function loadConfig() {
-  const cfg = await fetch("/api/config").then((r) => r.json());
+  const res = await fetch("/api/config");
+  const cfg = await res.json();
+  if (!res.ok || !Array.isArray(cfg.models) || !Array.isArray(cfg.temperatures)) throw new Error("Bad config");
   temperatures = cfg.temperatures;
   models = cfg.models;
   limits = { ...limits, ...cfg.limits };
+  mock = cfg.mock;
   $("#model").replaceChildren(...models.map((m) => new Option(m.label, m.id)));
   $("#model").value = cfg.defaultModel ?? models[0]?.id;
   setStatus(cfg);
-  if (cfg.logging) checkHealth();
+  if (cfg.logging && !cfg.mock) checkHealth();
 }
 
-// If Supabase is configured but not reachable, say why right on the page.
+// If something in the setup is broken, say so on the page. The details are in /api/health with HEALTH_TOKEN.
 async function checkHealth() {
   try {
     const h = await fetch("/api/health").then((r) => r.json());
-    if (h.ok) return;
-    const problems = [h.supabase_url, h.supabase_key, ...Object.values(h.tables ?? {})]
-      .filter((v) => typeof v === "string" && !v.startsWith("ok"));
-    if (problems.length) addStatusPill(`Supabase: ${problems[0]}`, "warn");
+    if (!h.ok) addStatusPill("Setup problem: see /api/health (README)", "warn");
   } catch {}
+}
+
+// Shown when /api/config can't be loaded: nothing else on the page can work.
+function serverDown() {
+  $("#status").replaceChildren();
+  addStatusPill("Couldn't reach the server. Reload to try again.", "warn");
+  $("#runBtn").disabled = true;
+  $("#chatSend").disabled = true;
 }
 
 async function loadHistory() {
@@ -122,6 +137,7 @@ async function loadHistory() {
   };
   try {
     const { configured, runs, error } = await fetch("/api/runs", { headers: { "x-client-id": clientId } }).then((r) => r.json());
+    if (mock) return empty("Mock runs aren't saved. Add NVIDIA_API_KEY to keep a history.");
     if (!configured) return empty("Connect Supabase to keep a history of runs.");
     if (error) return empty(`Couldn't load history: ${error}`);
     if (!runs.length) return empty("No runs yet. Try one above.");
@@ -137,15 +153,26 @@ async function loadHistory() {
       m.className = "d";
       m.textContent = models.find((x) => x.id === run.model)?.label ?? run.model;
       li.append(p, d, m);
-      li.onclick = () => {
-        $("#prompt").value = run.prompt;
-        renderCards(run.results);
-        window.scrollTo({ top: $("#composer").offsetTop - 16, behavior: "smooth" });
-      };
+      li.onclick = () => showRun(run);
       return li;
     }));
   } catch {
     empty("Couldn't load history.");
+  }
+}
+
+// The list has no outputs (to keep it small), so fetch the clicked run's results.
+async function showRun(run) {
+  $("#prompt").value = run.prompt;
+  window.scrollTo({ top: $("#composer").offsetTop - 16, behavior: "smooth" });
+  renderCards(null, { loading: true });
+  try {
+    const res = await fetch(`/api/runs?id=${encodeURIComponent(run.id)}`, { headers: { "x-client-id": clientId } });
+    const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    renderCards(data.results);
+  } catch (err) {
+    renderCards(temperatures.map((t) => ({ temperature: t, error: `Couldn't load this run: ${err.message}` })));
   }
 }
 
@@ -164,7 +191,7 @@ $("#composer").addEventListener("submit", async (e) => {
         maxTokens: Number($("#maxTokens").value),
       }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     renderCards(data.results);
     if (data.logged) loadHistory();
@@ -223,7 +250,7 @@ $("#chatForm").addEventListener("submit", async (e) => {
   const text = input.value.trim();
   if (!text) return;
   $("#chatLog").querySelector(".hint")?.remove();
-  addBubble("user", text);
+  const sent = addBubble("user", text);
   chatMessages.push({ role: "user", content: text });
   input.value = "";
   $("#chatSend").disabled = true;
@@ -241,13 +268,17 @@ $("#chatForm").addEventListener("submit", async (e) => {
     chatMessages.push({ role: "assistant", content: data.output });
     const meta = [
       data.tokens != null && `${data.tokens} tokens`,
-      `${(data.latencyMs / 1000).toFixed(1)}s`,
+      data.latencyMs > 0 && `${(data.latencyMs / 1000).toFixed(1)}s`,
+      data.mock && "mock",
       data.finishReason === "length" && "cut off",
     ].filter(Boolean).join(" · ");
     addBubble("assistant", data.output, meta);
   } catch (err) {
     pending.remove();
+    // The model never saw this message: mark it, so the screen matches what the next turn sends.
     chatMessages.pop();
+    sent.classList.add("failed");
+    sent.title = "Not sent";
     addBubble("error", err.message);
   } finally {
     $("#chatSend").disabled = false;
@@ -258,4 +289,4 @@ $("#chatClear").addEventListener("click", resetChat);
 resetChat();
 
 renderCards(null);
-loadConfig().then(loadHistory).catch(() => setStatus({ mock: true, logging: false }));
+loadConfig().then(loadHistory, serverDown);

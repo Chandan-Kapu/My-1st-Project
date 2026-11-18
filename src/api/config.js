@@ -1,12 +1,14 @@
-import { MODELS, DEFAULT_MODEL, TEMPERATURES, LIMITS, json, supabaseConfigured } from "../lib/shared.js";
+import { MODELS, DEFAULT_MODEL, TEMPERATURES, LIMITS, json, supabaseConfigured, nvidiaMode } from "../lib/shared.js";
 
-export function onRequestGet({ env }) {
+export function onRequestGet({ request, env }) {
+  const nvidia = nvidiaMode(request, env);
   return json({
     models: Object.entries(MODELS).map(([id, m]) => ({ id, ...m })),
     defaultModel: DEFAULT_MODEL,
     temperatures: TEMPERATURES,
     limits: LIMITS,
-    mock: !env.NVIDIA_API_KEY,
+    nvidia,
+    mock: nvidia === "mock",
     logging: supabaseConfigured(env),
   });
 }
