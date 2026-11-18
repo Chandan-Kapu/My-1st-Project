@@ -1,4 +1,4 @@
-import { TEMPERATURES, MODELS, LIMITS, json, supabase, supabaseConfigured } from "../lib/shared.js";
+import { TEMPERATURES, MODELS, LIMITS, json, supabase, supabaseConfigured, readJsonObject, clientId } from "../lib/shared.js";
 import { nvidiaChat } from "../lib/nvidia.js";
 
 // Used until NVIDIA_API_KEY is set, so the UI can be built and tried without keys.
@@ -16,12 +16,8 @@ function mockNvidia({ prompt, temperature }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Body must be JSON." }, 400);
-  }
+  const { body, error } = await readJsonObject(request);
+  if (error) return error;
 
   const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
   const model = body.model;
@@ -51,7 +47,7 @@ export async function onRequestPost({ request, env }) {
       const [row] = await supabase(env, "runs", {
         method: "POST",
         headers: { prefer: "return=representation" },
-        body: JSON.stringify({ prompt, model, max_tokens: maxTokens, results }),
+        body: JSON.stringify({ client_id: clientId(request), prompt, model, max_tokens: maxTokens, results }),
       });
       runId = row?.id ?? null;
     } catch (err) {

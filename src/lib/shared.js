@@ -23,6 +23,30 @@ export function json(data, status = 200) {
   });
 }
 
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Reads a JSON object body. Requiring application/json also stops other sites from posting
+// "simple" cross-origin requests (text/plain, forms) that spend NVIDIA credits.
+// Returns { body } or { error: Response }.
+export async function readJsonObject(request) {
+  const type = (request.headers.get("content-type") ?? "").toLowerCase();
+  if (!type.startsWith("application/json")) return { error: json({ error: "Send the body as application/json." }, 415) };
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return { error: json({ error: "Body must be JSON." }, 400) };
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return { error: json({ error: "Body must be a JSON object." }, 400) };
+  return { body };
+}
+
+// Random per-browser ID (sent as x-client-id) so Past runs only shows the runs made in that browser.
+export function clientId(request) {
+  const id = request.headers.get("x-client-id") ?? "";
+  return UUID.test(id) ? id.toLowerCase() : null;
+}
+
 // Server-side Supabase key: the new secret key (sb_secret_...), or the legacy service_role JWT.
 export function supabaseKey(env) {
   return (env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY || "").trim();

@@ -22,6 +22,7 @@
       <p class="eyebrow">One prompt · three temperatures · any model size</p>
       <h1>See what <em>temperature</em><br />actually does.</h1>
       <p class="lede">Your prompt runs at <b>0</b>, <b>0.7</b> and <b>1.5</b> at the same time. Outputs land side by side, and every run is logged so you can compare later.</p>
+      <p class="notice">Prompts and replies, from both the playground and the chat, are saved to a database for up to 90 days. Don't enter personal or confidential information.</p>
     </section>
 
     <form class="composer" id="composer">
@@ -47,7 +48,7 @@
         <h2 id="chat-title">Chat</h2>
         <button class="btn ghost" id="chatClear" type="button">Clear</button>
       </div>
-      <p class="chat-sub">Talks to <code>/api/chat</code> using <b>Nemotron 3.5 Lightning</b> at temperature 0.7. The conversation stays in this tab.</p>
+      <p class="chat-sub">Talks to <code>/api/chat</code> using <b>Nemotron 3.5 Lightning</b> at temperature 0.7. Each message is saved, like playground runs; Clear starts a new conversation.</p>
       <div class="chat-box">
         <ol class="chat-log" id="chatLog" aria-live="polite"></ol>
         <form class="chat-form" id="chatForm">
@@ -60,7 +61,7 @@
 
     <section class="history">
       <div class="history-head">
-        <h2>Past runs</h2>
+        <h2>Past runs <span class="sub">from this browser</span></h2>
         <button class="btn ghost" id="refreshBtn" type="button">Refresh</button>
       </div>
       <ol id="history" class="history-list"></ol>

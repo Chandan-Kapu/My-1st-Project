@@ -12,6 +12,18 @@ keep_vars = true
 directory = "./public"
 binding = "ASSETS"
 
+# Per-IP rate limits for the routes that call NVIDIA. Each Run x3 makes 3 calls.
+# namespace_id can be any number, as long as it's unique within your Cloudflare account.
+[[ratelimits]]
+name = "RUN_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }
+
+[[ratelimits]]
+name = "CHAT_LIMITER"
+namespace_id = "1002"
+simple = { limit = 20, period = 60 }
+
 [observability]
 enabled = true
 

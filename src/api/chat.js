@@ -1,8 +1,7 @@
-import { DEFAULT_MODEL, LIMITS, json, supabase, supabaseConfigured } from "../lib/shared.js";
+import { DEFAULT_MODEL, LIMITS, UUID, json, supabase, supabaseConfigured, readJsonObject } from "../lib/shared.js";
 import { nvidiaChat } from "../lib/nvidia.js";
 
 const ROLES = new Set(["system", "user", "assistant"]);
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Saves one request/response to Supabase. Failures go to Workers Logs, never to the user.
 async function logChat(env, row) {
@@ -18,12 +17,8 @@ async function logChat(env, row) {
 export async function onRequestPost({ request, env, ctx }) {
   if (!env.NVIDIA_API_KEY) return json({ error: "NVIDIA_API_KEY secret is not set." }, 503);
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Body must be JSON." }, 400);
-  }
+  const { body, error } = await readJsonObject(request);
+  if (error) return error;
 
   const messages = Array.isArray(body.messages)
     ? body.messages

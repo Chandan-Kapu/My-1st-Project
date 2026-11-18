@@ -69,6 +69,7 @@ h1 em {
   padding: 0 0.15em; border-radius: 0.2em; border: 2px solid var(--line);
 }
 .lede { max-width: 620px; margin: 22px auto 0; color: var(--muted); font-size: 18px; }
+.notice { max-width: 620px; margin: 12px auto 0; color: var(--muted); font-size: 14px; }
 
 .composer {
   background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius);
@@ -124,6 +125,7 @@ input[type="number"] { width: 110px; }
 @keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
 
 .chat { margin-top: 56px; }
+.history-head h2 .sub { color: var(--muted); font-size: 14px; font-weight: 400; margin-left: 6px; }
 .chat-sub { color: var(--muted); margin: 10px 0 16px; }
 .chat-sub code { font: 13px "JetBrains Mono", monospace; background: var(--surface); border: 1px solid var(--muted); border-radius: 6px; padding: 1px 6px; }
 .chat-box { background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }

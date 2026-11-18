@@ -3,6 +3,18 @@ const tpl = $("#card-tpl");
 const TAGS = { 0: "deterministic", 0.7: "balanced", 1.5: "chaotic" };
 let temperatures = [0, 0.7, 1.5];
 let models = [];
+let limits = { promptChars: 4000 };
+
+// Random ID kept in this browser, so Past runs only lists runs made here.
+const clientId = (() => {
+  try {
+    let id = localStorage.getItem("clientId");
+    if (!id) localStorage.setItem("clientId", (id = crypto.randomUUID()));
+    return id;
+  } catch {
+    return crypto.randomUUID?.() ?? "";
+  }
+})();
 
 function renderCards(results, { loading = false } = {}) {
   const grid = $("#results");
@@ -82,6 +94,7 @@ async function loadConfig() {
   const cfg = await fetch("/api/config").then((r) => r.json());
   temperatures = cfg.temperatures;
   models = cfg.models;
+  limits = { ...limits, ...cfg.limits };
   $("#model").replaceChildren(...models.map((m) => new Option(m.label, m.id)));
   $("#model").value = cfg.defaultModel ?? models[0]?.id;
   setStatus(cfg);
@@ -108,7 +121,7 @@ async function loadHistory() {
     list.replaceChildren(li);
   };
   try {
-    const { configured, runs, error } = await fetch("/api/runs").then((r) => r.json());
+    const { configured, runs, error } = await fetch("/api/runs", { headers: { "x-client-id": clientId } }).then((r) => r.json());
     if (!configured) return empty("Connect Supabase to keep a history of runs.");
     if (error) return empty(`Couldn't load history: ${error}`);
     if (!runs.length) return empty("No runs yet. Try one above.");
@@ -144,7 +157,7 @@ $("#composer").addEventListener("submit", async (e) => {
   try {
     const res = await fetch("/api/run", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-client-id": clientId },
       body: JSON.stringify({
         prompt: $("#prompt").value,
         model: $("#model").value,
@@ -183,6 +196,20 @@ function addBubble(cls, text, meta) {
   return li;
 }
 
+// The server caps a conversation at 20 messages and limits.promptChars characters in total,
+// so send the newest messages that fit and drop the oldest. One long reply can't lock the chat.
+function recentHistory(messages) {
+  const kept = [];
+  let chars = 0;
+  for (let i = messages.length - 1; i >= 0 && kept.length < 20; i--) {
+    chars += messages[i].content.length;
+    if (chars > limits.promptChars && kept.length) break;
+    kept.unshift(messages[i]);
+  }
+  while (kept.length > 1 && kept[0].role !== "user") kept.shift();
+  return kept;
+}
+
 function resetChat() {
   chatMessages = [];
   conversationId = crypto.randomUUID?.() ?? null;
@@ -205,7 +232,7 @@ $("#chatForm").addEventListener("submit", async (e) => {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ messages: chatMessages.slice(-20), conversationId }),
+      body: JSON.stringify({ messages: recentHistory(chatMessages), conversationId }),
     });
     const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     pending.remove();

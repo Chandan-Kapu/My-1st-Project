@@ -21,7 +21,11 @@ alter table public.runs add constraint runs_max_tokens_check check (max_tokens b
 
 comment on table public.runs is 'Each prompt run at temperatures 0, 0.7 and 1.5 (written by /api/run).';
 
+-- Random per-browser ID, so Past runs only shows a visitor their own runs (no-op if it exists).
+alter table public.runs add column if not exists client_id uuid;
+
 create index if not exists runs_created_at_idx on public.runs (created_at desc);
+create index if not exists runs_client_idx on public.runs (client_id, created_at desc);
 create index if not exists runs_model_idx on public.runs (model, created_at desc);
 
 -- ---------------------------------------------------------------------------
@@ -109,11 +113,9 @@ revoke all on public.all_queries from anon, authenticated;
 grant select on public.all_queries to service_role;
 
 -- ---------------------------------------------------------------------------
--- 6. Optional cleanup: delete runs and chat logs older than N days
+-- 6. Cleanup: delete runs and chat logs older than N days
 -- ---------------------------------------------------------------------------
--- Run by hand:  select public.delete_old_runs(90);
--- Or schedule it with the pg_cron extension (Database → Extensions → pg_cron):
---   select cron.schedule('delete-old-runs', '0 3 * * *', 'select public.delete_old_runs(90)');
+-- Scheduled daily below with pg_cron (90 days). Run by hand:  select public.delete_old_runs(90);
 create or replace function public.delete_old_runs(days int default 90)
 returns int
 language sql
@@ -132,6 +134,17 @@ $$;
 
 revoke execute on function public.delete_old_runs(int) from public, anon, authenticated;
 grant execute on function public.delete_old_runs(int) to service_role;
+
+-- Run the cleanup every day at 03:17 UTC. If pg_cron can't be enabled, the rest of this file still
+-- applies; turn it on under Database → Extensions → pg_cron and run this file again.
+do $$
+begin
+  create extension if not exists pg_cron;
+  perform cron.schedule('delete-old-runs', '17 3 * * *', 'select public.delete_old_runs(90)');
+exception when others then
+  raise notice 'pg_cron is not available, so old rows will not be deleted automatically: %', sqlerrm;
+end
+$$;
 
 -- Make the Data API see the new tables right away.
 notify pgrst, 'reload schema';
